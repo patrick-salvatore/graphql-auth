@@ -1,4 +1,5 @@
-// import "reflect-metadata";
+import "reflect-metadata";
+require('dotenv').config()
 import express from "express";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
