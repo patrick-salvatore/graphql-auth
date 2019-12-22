@@ -132,22 +132,23 @@ export class UserResolver {
     const user = await User.findOne({ where: { userName } });
     const doesMatch = newPassword === retypePassword;
 
+    if (!user) {
+      throw new Error(`A user under ${userName} does not exist`);
+    }
+
+    if (!doesMatch) {
+      throw new Error(`Your password entries do not match`);
+    }
+
+    if (!validatePassword(newPassword)) {
+      throw new Error(`The password you entered is not long enough`);
+    }
+
     try {
-      if (!user) {
-        throw new Error(`A user under ${userName} does not exist`);
-      }
+      const newHashedPassword = await hash(newPassword, 14);
+      user.password = newHashedPassword;
 
-      if (!doesMatch) {
-        throw new Error(`Your password entries do not match`);
-      }
-
-      if (validatePassword(newPassword) && doesMatch) {
-        const newHashedPassword = await hash(newPassword, 14);
-        user.password = newHashedPassword;
-
-        user.save();
-      }
-
+      user.save();
       return {
         success: true,
         message: 'you have successfully updated your password',
