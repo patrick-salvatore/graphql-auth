@@ -1,4 +1,7 @@
-import { validateUserCredentials } from '../helpers/User/validation';
+import {
+  validateUserCredentials,
+  validatePassword,
+} from '../helpers/User/validation';
 import { IAGContext } from '../interfaces/AGContext';
 import { createToken, checkAuthorization } from '../helpers/User/auth';
 import User from '../entity/User';
@@ -16,7 +19,7 @@ import { hash, compare } from 'bcrypt';
 import { getConnection } from 'typeorm';
 
 @ObjectType()
-class RegisterResponse {
+class BasicResponse {
   @Field()
   success: boolean;
 
@@ -25,7 +28,7 @@ class RegisterResponse {
 }
 
 @ObjectType()
-class LoginResponse {
+class LoginResponse extends BasicResponse {
   @Field()
   success: boolean;
 
@@ -50,7 +53,7 @@ export class UserResolver {
   }
 
   // Register User Mutation - takes email & password as arguments & returns message
-  @Mutation(() => RegisterResponse)
+  @Mutation(() => BasicResponse)
   async register(
     @Arg('userName') userName: string,
     @Arg('email') email: string,
@@ -116,6 +119,43 @@ export class UserResolver {
         success: false,
         accessToken: '',
         message: `${err.message}`,
+      };
+    }
+  }
+
+  @Mutation(() => BasicResponse)
+  async updateUserPassword(
+    @Arg('userName') userName: string,
+    @Arg('newPassword') newPassword: string,
+    @Arg('retypePassword') retypePassword: string
+  ) {
+    const user = await User.findOne({ where: { userName } });
+    const doesMatch = newPassword === retypePassword;
+
+    try {
+      if (!user) {
+        throw new Error(`A user under ${userName} does not exist`);
+      }
+
+      if (!doesMatch) {
+        throw new Error(`Your password entries do not match`);
+      }
+
+      if (validatePassword(newPassword) && doesMatch) {
+        const newHashedPassword = await hash(newPassword, 14);
+        user.password = newHashedPassword;
+
+        user.save();
+      }
+
+      return {
+        success: true,
+        message: 'you have successfully updated your password',
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message,
       };
     }
   }

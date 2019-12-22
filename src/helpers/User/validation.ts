@@ -8,7 +8,7 @@ const validateEmail = (email: string) => {
   return false; 
 };
 
-const validatePassword = (password: string) => {
+export const validatePassword = (password: string) => {
   if (password.length > 6) {
     return true;
   }
